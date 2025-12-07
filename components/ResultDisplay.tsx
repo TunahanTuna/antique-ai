@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AntiqueAnalysis } from '../types';
+import { RestorationChat } from './RestorationChat';
 import { 
   History, 
   MapPin, 
@@ -34,6 +35,13 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ analysis, imageUrl
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Value Range Calculation
+  const minVal = analysis.estimatedValue.min;
+  const maxVal = analysis.estimatedValue.max;
+  const chartMax = maxVal > 0 ? maxVal * 1.2 : 100; // 20% buffer for visual balance
+  const leftPercent = Math.max(0, Math.min((minVal / chartMax) * 100, 95));
+  const widthPercent = Math.max(2, Math.min(((maxVal - minVal) / chartMax) * 100, 100 - leftPercent));
 
   return (
     <div className="w-full max-w-6xl mx-auto animate-in slide-in-from-bottom-10 duration-700 pb-20">
@@ -105,21 +113,55 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ analysis, imageUrl
               style={{ transform: `translateY(${scrollY * -0.05}px)` }}
             ></div>
 
-            <div className="relative z-10 flex items-center justify-between">
-              <div>
-                <p className="text-antique-300 text-sm font-medium uppercase tracking-widest mb-1">Tahmini Değer Aralığı</p>
-                <div className="text-4xl lg:text-5xl font-serif font-bold text-white flex items-baseline gap-2">
-                  <span>{analysis.estimatedValue.min.toLocaleString()}</span>
-                  <span className="text-2xl text-antique-400">-</span>
-                  <span>{analysis.estimatedValue.max.toLocaleString()}</span>
-                  <span className="text-xl font-sans font-light text-antique-300">{analysis.estimatedValue.currency}</span>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-antique-300 text-sm font-medium uppercase tracking-widest mb-1">Tahmini Değer Aralığı</p>
+                  <div className="text-4xl lg:text-5xl font-serif font-bold text-white flex items-baseline gap-2">
+                    <span>{analysis.estimatedValue.min.toLocaleString()}</span>
+                    <span className="text-2xl text-antique-400">-</span>
+                    <span>{analysis.estimatedValue.max.toLocaleString()}</span>
+                    <span className="text-xl font-sans font-light text-antique-300">{analysis.estimatedValue.currency}</span>
+                  </div>
+                </div>
+                <div className="hidden sm:flex h-16 w-16 bg-antique-800 rounded-full items-center justify-center border border-antique-700 shadow-inner">
+                  <DollarSign className="w-8 h-8 text-antique-200" />
                 </div>
               </div>
-              <div className="hidden sm:flex h-16 w-16 bg-antique-800 rounded-full items-center justify-center border border-antique-700 shadow-inner">
-                <DollarSign className="w-8 h-8 text-antique-200" />
+
+              {/* Value Range Visualization */}
+              <div className="relative pt-2 pb-1">
+                <div className="h-3 bg-antique-800 rounded-full overflow-hidden w-full relative border border-antique-700/50">
+                  {/* Min marker line */}
+                  <div 
+                    className="absolute top-0 bottom-0 w-0.5 bg-antique-500 z-20"
+                    style={{ left: `${leftPercent}%` }}
+                  />
+                  {/* Max marker line */}
+                  <div 
+                    className="absolute top-0 bottom-0 w-0.5 bg-antique-500 z-20"
+                    style={{ left: `${leftPercent + widthPercent}%` }}
+                  />
+                  {/* Fill */}
+                  <div 
+                    className="absolute top-0 bottom-0 bg-gradient-to-r from-antique-500 via-antique-400 to-antique-300 opacity-80 rounded-sm"
+                    style={{ 
+                      left: `${leftPercent}%`, 
+                      width: `${widthPercent}%` 
+                    }}
+                  />
+                </div>
+                {/* Labels */}
+                <div className="flex justify-between text-[10px] text-antique-500 mt-2 font-mono uppercase tracking-wider">
+                  <span>0</span>
+                  <span className="absolute transform -translate-x-1/2" style={{ left: `${leftPercent}%` }}>Min</span>
+                  <span className="absolute transform -translate-x-1/2" style={{ left: `${leftPercent + widthPercent}%` }}>Max</span>
+                  <span>{chartMax.toLocaleString()} +</span>
+                </div>
               </div>
+
             </div>
-            <p className="text-xs text-antique-400 mt-4">*Bu bir yapay zeka tahminidir. Kesin değerleme için lütfen profesyonel bir ekspere danışın.</p>
+            <p className="text-xs text-antique-400 mt-6 border-t border-antique-800/50 pt-4">*Bu bir yapay zeka tahminidir. Kesin değerleme için lütfen profesyonel bir ekspere danışın.</p>
           </div>
 
           {/* Description */}
@@ -202,6 +244,11 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ analysis, imageUrl
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* Chat Assistant */}
+          <div className="transition-all duration-100 ease-out will-change-transform" style={{ transform: `translateY(${scrollY * -0.02}px)` }}>
+            <RestorationChat analysis={analysis} />
           </div>
 
           <button 

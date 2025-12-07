@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type, Schema, Chat } from "@google/genai";
 import { AntiqueAnalysis } from '../types';
 
 const apiKey = process.env.API_KEY || '';
@@ -81,4 +81,37 @@ export const analyzeImage = async (base64Image: string): Promise<AntiqueAnalysis
     console.error("Gemini Analysis Error:", error);
     throw new Error("Antika analizi yapılamadı. Lütfen tekrar deneyin.");
   }
+};
+
+export const createRestorationChat = (analysis: AntiqueAnalysis): Chat => {
+  if (!apiKey) {
+    throw new Error("API Anahtarı eksik.");
+  }
+
+  const context = `
+    Sen uzman bir antika restoratörü ve sanat tarihi uzmanısın. Şu an aşağıdaki özelliklere sahip bir eseri inceliyoruz:
+    
+    Eser Adı: ${analysis.title}
+    Tahmini Dönem: ${analysis.estimatedDate}
+    Köken: ${analysis.origin}
+    Stil: ${analysis.style}
+    Malzeme/Özellikler: ${analysis.keyFeatures.join(', ')}
+    Orijinallik Durumu: ${analysis.isAuthentic ? 'Orijinal görünüyor' : 'Reprodüksiyon olabilir'}
+    
+    Kullanıcı sana bu eserle ilgili bakım, onarım, temizlik veya koruma hakkında sorular soracak.
+    Verdiğin cevaplar profesyonel, korumacı yaklaşımı benimseyen ve eserin değerini düşürmeyecek nitelikte olmalı.
+    Eğer kullanıcı esere zarar verebilecek bir işlem sorarsa (örn: verniklemek, sert kimyasalla silmek), onu uyar ve profesyonel yardım almasını öner.
+    Cevapların kısa, net ve Türkçe olsun.
+
+    ÖNEMLİ: Her cevabının en sonunda, kullanıcının konuyla ilgili sorabileceği, sohbeti ilerletecek 3 kısa takip sorusu öner.
+    Bu önerileri şu formatta, cevabın geri kalanından ayırarak ver:
+    |||SUGGESTIONS_START|||["Örnek Soru 1?", "Örnek Soru 2?", "Örnek Soru 3?"]|||SUGGESTIONS_END|||
+  `;
+
+  return ai.chats.create({
+    model: "gemini-2.5-flash",
+    config: {
+      systemInstruction: context,
+    }
+  });
 };
