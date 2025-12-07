@@ -1,0 +1,7 @@
+{
+  "name": "Antika AI",
+  "description": "Yapay zeka destekli antika değerleme, dönem tespiti ve restorasyon rehberi.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
